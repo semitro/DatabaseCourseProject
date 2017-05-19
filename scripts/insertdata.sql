@@ -11,9 +11,9 @@ insert into Band (name, formation_date, formation_place, disband_date) values ('
 
 insert into Member(person_id, band_id, join_date,leave_date) values (1,1,null,null), (2,1,null,null), (3,1,'1987-01-01',null), (4,1,null,null);
 
-insert into Member_Role(person_id, band_id, role_id,start_date,end_date) values ((select person_id from Person where name = 'Kurt Donald Cobain'),1,(select role_id from Role where name = 'гитарист'),(select formation_date from Band where name = 'Nirvana' ),(select disband_date from Band where name = 'Nirvana' )), 
-((select person_id from Person where name = 'Dave Grohl'),1,(select role_id from Role where name = 'ударник'),(select formation_date from Band where name = 'Nirvana' ),(select disband_date from Band where name = 'Nirvana' )),
-((select person_id from Person where name = 'Krist Novoselic'),1,(select role_id from Role where name = 'басист'),(select formation_date from Band where name = 'Nirvana' ),(select disband_date from Band where name = 'Nirvana' ));
+insert into Member_Role(member_id, role_id,start_date,end_date) values ((select member_id from Member join Person using(person_id) where name = 'Kurt Donald Cobain'),(select role_id from Role where name = 'гитарист'),(select formation_date from Band where name = 'Nirvana' ),(select disband_date from Band where name = 'Nirvana' )), 
+((select member_id from Member join Person using(person_id) where name = 'Dave Grohl'),(select role_id from Role where name = 'ударник'),(select formation_date from Band where name = 'Nirvana' ),(select disband_date from Band where name = 'Nirvana' )),
+((select member_id from Member join Person using(person_id) where name = 'Krist Novoselic'),(select role_id from Role where name = 'басист'),(select formation_date from Band where name = 'Nirvana' ),(select disband_date from Band where name = 'Nirvana' ));
 
 Insert into Label(name,parent) values ('Warner Music Group',null),('Sub Pop',1);
 
@@ -41,8 +41,9 @@ Insert into Person(name,sex) values ('”Нейромонах Феофан”','
 Insert into Role(name) values ('балалаечник'),('диджей') ;
 Insert into Place(country,addr) values ('Россия','Санкт-Петербург');
 Insert into Band values (default,'Нейромонах Феофан','2009-01-01',(select place_id from Place where addr = 'Санкт-Петербург'),null);
-Insert into Member values ((select person_id from Person where name='”Нейромонах Феофан”'),(select band_id from Band where name='Нейромонах Феофан'),'2009-01-01',null), ((select person_id from Person where name='“Никодим”'),(select band_id from Band where name='Нейромонах Феофан'),'2009-01-01',null);
-Insert into Member_Role values(default, (select person_id from Person where name='”Нейромонах Феофан”'),(select band_id from Band where name='Нейромонах Феофан'), (select role_id from Role where name='основатель'),'2009-01-01',null),(default, (select person_id from Person where name='”Нейромонах Феофан”'),(select band_id from Band where name='Нейромонах Феофан'), (select role_id from Role where name='вокалист'),'2009-01-01',null),(default, (select person_id from Person where name='”Нейромонах Феофан”'),(select band_id from Band where name='Нейромонах Феофан'), (select role_id from Role where name='балалаечник'),'2009-01-01',null),(default, (select person_id from Person where name='“Никодим”'),(select band_id from Band where name='Нейромонах Феофан'), (select role_id from Role where name='диджей'),'2009-01-01',null);
+Insert into Member values (default,(select person_id from Person where name='”Нейромонах Феофан”'),(select band_id from Band where name='Нейромонах Феофан'),'2009-01-01',null), (default,(select person_id from Person where name='“Никодим”'),(select band_id from Band where name='Нейромонах Феофан'),'2009-01-01',null);
+
+Insert into Member_Role values(default, (select member_id from Member join Person using(person_id) where name='”Нейромонах Феофан”'), (select role_id from Role where name='основатель'),'2009-01-01',null),(default, (select member_id from Member join Person using(person_id) where name='”Нейромонах Феофан”'), (select role_id from Role where name='вокалист'),'2009-01-01',null),(default, (select member_id from Member join Person using(person_id) where name='”Нейромонах Феофан”'), (select role_id from Role where name='балалаечник'),'2009-01-01',null),(default, (select member_id from Member join Person using(person_id) where name='“Никодим”'), (select role_id from Role where name='диджей'),'2009-01-01',null);
 
 Insert into Style(name) values('древнерусский drum&bass');
 Insert into Composition(name,creation_date,length,style_id) values ('Ядрёность - образ жизни','2013-01-01',303, (select style_id from Style where name = 'древнерусский drum&bass')), ('Притоптать','2015-01-01',201,(select style_id from Style where name = 'древнерусский drum&bass')),('Холодно в лесу','2013-01-01',189,(select style_id from Style where name = 'древнерусский drum&bass'));
@@ -93,49 +94,38 @@ insert into Member (person_id,band_id,join_date) values
 
 Insert into Role(name) values ('пианист');
 
-Insert into Member_Role(person_id,band_id,role_id,start_date) values 
-	((select person_id from Person where name = 'Thomas Edward Yorke'),
-	 (select band_id from band where name = 'Radiohead'),
+Insert into Member_Role(member_id,role_id,start_date) values 
+	((select member_id from Member join Person using(person_id) where name = 'Thomas Edward Yorke'),
 	 (select role_id from Role where name = 'вокалист'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Thomas Edward Yorke'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Thomas Edward Yorke'),
 	 (select role_id from Role where name = 'основатель'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Thomas Edward Yorke'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Thomas Edward Yorke'),
 	 (select role_id from Role where name = 'пианист'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Thomas Edward Yorke'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Thomas Edward Yorke'),
 	 (select role_id from Role where name = 'автор песен'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Jonathan Richard Guy'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Jonathan Richard Guy'),
 	 (select role_id from Role where name = 'автор песен'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Jonathan Richard Guy'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Jonathan Richard Guy'),
 	 (select role_id from Role where name = 'гитарист'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Colin Charles Greenwood'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Colin Charles Greenwood'),
 	 (select role_id from Role where name = 'басист'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Edward John O`Brien'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Edward John O`Brien'),
 	 (select role_id from Role where name = 'автор песен'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Edward John O`Brien'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Edward John O`Brien'),
 	 (select role_id from Role where name = 'бэк-вокалист'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Edward John O`Brien'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Edward John O`Brien'),
 	 (select role_id from Role where name = 'гитарист'),
 	 (select formation_date from Band where name = 'Radiohead')),
-	((select person_id from Person where name = 'Philip James Selway'),
-	 (select band_id from band where name = 'Radiohead'),
+	((select member_id from Member join Person using(person_id) where name = 'Philip James Selway'),
 	 (select role_id from Role where name = 'ударник'),
 	 (select formation_date from Band where name = 'Radiohead'));
 
