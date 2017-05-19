@@ -187,7 +187,22 @@ Insert into Author(composition_id,person_id,of_what) values
 	((select composition_id from Composition where name = 'Climbing Up the Walls'),
 	(select person_id from Person where name = 'Jonathan Richard Guy'),'lyrics');
 
+Insert into Person(name, birth_date, birth_place, death_date, death_place, sex) values
+	('Aaron Burckhard', '1963-11-14', null, null, null, 'm');
 
+Insert into Member(person_id, band_id, join_date, leave_date) values
+	((select person_id from Person where name='Aaron Burckhard'),
+		(select band_id from Band where name='Nirvana'), '1987-01-01', '1987-01-01'),
+	((select person_id from Person where name='Dale Crover'),
+		(select band_id from Band where name='Nirvana'), '1988-01-23', '1988-01-23'),
+	((select person_id from Person where name='Dale Crover'),
+		(select band_id from Band where name='Nirvana'), '1990-08-01', '1990-08-31');
+
+Insert into Member_Role(member_id, role_id, start_date, end_date) values
+	((select member_id from Member join Person using(person_id) where name='Dale Crover' and join_date='1988-01-23'),
+		(select role_id from Role where name='ударник'), '1988-01-23', '1988-01-23'),
+	((select member_id from Member join Person using(person_id) where name='Dale Crover' and join_date='1990-08-01'),
+		(select role_id from Role where name='ударник'), '1990-08-01', '1990-08-31');
 		
 		
 
