@@ -4,4 +4,4 @@ create index index_alias on alias (alias);
 create index index_composition_name on composition (name);
 create index index_album_name on album (name);
 create index index_style_name on style (name);
-
+create index index_member_id on member_role(member_id);

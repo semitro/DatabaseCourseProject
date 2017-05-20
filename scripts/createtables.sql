@@ -37,31 +37,27 @@ create table Band(
                 constraint band_dates check(disband_date >= formation_date) 
 ); 
 
-create table Member( 
-        person_id int not null references Person(person_id) on update cascade, 
-        band_id int not null references Band(band_id) on update cascade, 
-        join_date date, 
-        leave_date date, 
-        primary key(person_id, band_id), 
-                constraint member_dates check(leave_date >= join_date) 
-); 
+create table Member(
+	member_id serial primary key,
+	person_id int not null references Person(person_id) on update cascade,
+	band_id int not null references Band(band_id) on update cascade,
+	join_date date,
+	leave_date date
+);
 
-create table Role( 
-        role_id serial primary key, 
-        name varchar(80) not null unique 
-); 
+create table Role(
+	role_id serial primary key,
+	name varchar(80) not null unique
+);
 
-create table Member_Role( 
-        member_role_id serial primary key, 
-        person_id int not null, 
-        band_id int not null, 
-        foreign key(person_id,band_id) references Member(person_id, band_id) 
-                on update cascade on delete cascade, 
-        role_id int references Role(role_id), 
-        start_date date, 
-        end_date date, 
-                constraint member_role_dates check(end_date >= start_date) 
-); 
+create table Member_Role(
+	member_role_id serial primary key,
+	member_id int not null references Member(member_id) on update cascade,
+	role_id int references Role(role_id),
+	start_date date,
+	end_date date,
+		constraint member_role_dates check(end_date >= start_date)
+);
 
 create table Style( 
         style_id serial primary key, 
