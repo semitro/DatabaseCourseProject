@@ -204,11 +204,3 @@ Insert into Member_Role(member_id, role_id, start_date, end_date) values
 	((select member_id from Member join Person using(person_id) where name='Dale Crover' and join_date='1990-08-01'),
 		(select role_id from Role where name='ударник'), '1990-08-01', '1990-08-31');
 		
-		
-
-
-
-
-
-
-
