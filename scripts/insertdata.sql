@@ -3,7 +3,7 @@ insert into Role(name) values ('основатель'), ('вокалист'), ('
 
 insert into Place(country, addr) values ('USA', 'Aberdeen,  Washington'), ('USA', 'Springfield,  Virginia'), ('USA', 'Compton,  California'), ('USA', 'Seattle,  Washington');
 
-insert into Person(name, birth_date, birth_place, death_date,  death_place, sex) values  ('Dale Crover',  '1967-10-23', 1 , null, null, 'm'), ('Dave Grohl',  '1969-06-14', 2, null, null, 'm'), ('Krist Novoselic',  '1965-05-16', 3, null, null, 'm'), ('Kurt Donald Cobain',  '1967-02-20', 3, '1994-04-05', null, 'm');
+insert into Person(name, birth_date, birth_place, death_date,  death_place, sex) values  ('Dale Crover',  '1967-10-23', 1 , null, null, 'm'), ('Dave Grohl',  '1969-06-14', 2, null, null, 'm'), ('Krist Novoselic',  '1965-05-16', 3, null, null, 'm'), ('Kurt Donald Cobain',  '1967-02-20', 3, '1994-04-05', 4, 'm');
 
 insert into Alias (person_id,alias) values ((select person_id from Person where name='Dave Grohl'),'Dale Nixon');
 
