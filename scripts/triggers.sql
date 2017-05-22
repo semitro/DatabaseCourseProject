@@ -21,6 +21,11 @@ Begin
 	> 
 	(select disband_date from Band where Band.band_id = new.band_id)
   ) then return null;
+  if( 
+	(select Person.death_date from Person where Person.person_id = new.person_id) 
+	<
+	(select formation_date from Band where Band.band_id = new.band_id)
+  ) then return null;
 end if;
 return new;
 End;'
