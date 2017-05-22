@@ -1,0 +1,7 @@
+create or replace function TriggerAliasDateCorrect() 
+	returns trigger As '
+Begin
+ if (new.start_date < (select birth_date from new join person using(person_id)))
+  then return NULL;
+ end if;
+End;' language plpgsql;
