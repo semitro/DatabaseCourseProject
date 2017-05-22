@@ -5,3 +5,5 @@ create index index_composition_name on composition (name);
 create index index_album_name on album (name);
 create index index_style_name on style (name);
 create index index_member_id on member_role(member_id);
+-- Один индекс или два - вот в чём вопрос?
+create index index_member_foreign_ids on member(person_id,band_id);
