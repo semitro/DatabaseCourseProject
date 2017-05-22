@@ -54,3 +54,19 @@ as $$
 	 and (Album.release_date is null or since is null or Album.release_date>since)
 	 and (Album.release_date is null or until is null or Album.release_date<until);
 $$;
+
+-- Имя можно не указывать, чтобы получить по всем
+-- Дополнительно можно указать группу, если есть тёзки, чтобы сузить поиск
+create or replace function getPersonalInfo (personName varchar(80) default null, bandName varchar(80) default null)
+	returns table(name varchar(80), aliases varchar, sex char(1), date_of_birth date, 
+		place_of_birth varchar, date_of_death date, place_of_death varchar)
+	language SQL STABLE
+as $$
+	with Aliases as (select person_id, string_agg(alias, ',') as aliases from Alias group by person_id)
+	select Person.name, Aliases.aliases, Person.sex, Person.birth_date, concat_ws(', ',P1.name,P1.addr,P1.country),
+		Person.death_date, concat_ws(', ',P2.name,P2.addr,P2.country)
+	from Person left join Place as P1 on birth_place=P1.place_id
+		left join Place as P2 on death_place=P2.place_id left join Aliases using(person_id)
+	where (personName is null or Person.name=personName) and (bandName is null or person_id in
+		(select person_id from Member join Band using(band_id) where Band.name=bandName));
+$$;
