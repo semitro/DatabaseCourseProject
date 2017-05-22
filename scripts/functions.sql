@@ -36,3 +36,21 @@ as $$
 	 and (Member.join_date is null or until is null or Member.join_date<until)
 	 and (Member.leave_date is null or since is null or Member.leave_date>since);
 $$;
+
+-- Даты ограничивают релиз альбома, не запись
+create or replace function getBandAlbums (bandName varchar(80), since date default null, until date default null)
+	returns table(name varchar(80), is_single boolean, released date, label varchar(80), copies int,
+		rec_from date, rec_to date, studios varchar(160), collab varchar)
+	language SQL STABLE
+as $$
+	with Collab as (select album_id, string_agg(B2.name,', ') as collab
+		from (Band as B1 join Album_Band as A1 using(band_id)) join (Band as B2 join Album_Band as A2 using(band_id)) using(album_id)
+		where B1.band_id<>B2.band_id and B1.name=bandName group by album_id)
+	select Album.name, Album.is_single, Album.release_date, Label.name, Album.copies_num,
+	 	Album.record_start_date, Album.record_end_date, concat_ws(', ', Album.studio1, Album.studio2),
+	 	Collab.collab
+ 	from Album join Label using(label_id) join Album_Band using(album_id) join Band using(band_id) left join Collab using(album_id)
+ 	where Album.is_fake=false and Band.name=bandName
+	 and (Album.release_date is null or since is null or Album.release_date>since)
+	 and (Album.release_date is null or until is null or Album.release_date<until);
+$$;
