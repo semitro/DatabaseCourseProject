@@ -5,9 +5,8 @@ $$
 begin
 	return Query 
 	select distinct Composition.composition_id, Composition.name, Composition.creation_date, Style.name Style 
-		from 
-	Band join album_band using(band_id) join Album using(album_id) join Composition_album using(album_id)
-		 join composition using(composition_id) join Style using(style_id) 
+	from Composition left join Style using(style_id) join Composition_Album using(composition_id)
+		join Album using(album_id) join Album_Band using(album_id) join Band using(band_id)
 	where Band.name = bandName order by Composition.creation_date;
 end
 $$
@@ -19,8 +18,7 @@ as $$
 Begin
 	return Query	
 	select distinct Composition.composition_id, Composition.name, Composition.creation_date, Style.name, Author.of_what
-		from
-	Person join Author using(person_id) join Composition using(composition_id) join Style using(style_id)
+	from Person join Author using(person_id) join Composition using(composition_id) left join Style using(style_id)
 	where Person.name = person_name;
 End 
 $$
@@ -49,7 +47,7 @@ as $$
 	select Album.name, Album.is_single, Album.release_date, Label.name, Album.copies_num,
 	 	Album.record_start_date, Album.record_end_date, concat_ws(', ', Album.studio1, Album.studio2),
 	 	Collab.collab
- 	from Album join Label using(label_id) join Album_Band using(album_id) join Band using(band_id) left join Collab using(album_id)
+ 	from Album left join Label using(label_id) join Album_Band using(album_id) join Band using(band_id) left join Collab using(album_id)
  	where Album.is_fake=false and Band.name=bandName
 	 and (Album.release_date is null or since is null or Album.release_date>since)
 	 and (Album.release_date is null or until is null or Album.release_date<until);
@@ -120,7 +118,9 @@ $$;
 
 create or replace function addSingle (compName varchar, released date, rec_from date, rec_to date,
 	labelName varchar, studio varchar, length int, styleName varchar, copies int, variadic bands varchar[])
-	returns void language plpgsql volatile
+	returns void
+	language plpgsql
+	volatile
 as $$
 declare
 	s_id int;
@@ -147,5 +147,33 @@ begin
 		insert into Album_Band (album_id, band_id) values
 			(a_id, (select band_id from Band where name=b));
 	end loop;
+end
+$$;
+
+-- Добавляет последние композиции
+create or replace function addCompositionsToAlbum (bandName varchar, albumName varchar, variadic compositions varchar[])
+	returns void
+	language plpgsql
+	volatile
+as $$
+declare
+	a_id int;
+	com varchar;
+begin
+	if compositions is null or albumName is null then
+		return;
+	end if;
+	if bandName is null then
+		a_id := (select album_id from Album where name=albumName order by album_id desc limit 1);
+	else
+		a_id := (select album_id from Album join Album_Band using(album_id) join Band using(band_id)
+			where Band.name=bandName and Album.name=albumName order by band_id desc, album_id desc limit 1);
+	end if;
+	foreach com in array compositions loop
+		insert into Composition_Album (composition_id, album_id) values
+			((select composition_id from Composition
+			where name=com order by composition_id desc limit 1), a_id);
+	end loop;
+			
 end
 $$;
