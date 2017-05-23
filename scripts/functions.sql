@@ -30,8 +30,9 @@ create or replace function getMembersOfBand (bandName varchar(80), since date de
 	language SQL
 	stable
 as $$
-	select Person.id, Person.name, Member.join_date, Member.leave_date, Role.name
-	 from Band join Member using(band_id) join Person using(person_id) join Member_Role using(member_id) join Role using(role_id)
+	select Person.person_id, Person.name, Member.join_date, Member.leave_date, Role.name
+	 from Band join Member using(band_id) join Person using(person_id)
+	 	left join Member_Role using(member_id) left join Role using(role_id)
 	 where Band.name=bandName
 	 and (Member.join_date is null or until is null or Member.join_date<until)
 	 and (Member.leave_date is null or since is null or Member.leave_date>since);
@@ -59,7 +60,7 @@ $$;
 -- Отбор можно производить по имени человека, по имени группы или по тому и другому сразу,
 -- или же можно вывести информацию по всем
 create or replace function getPersonalInfo (personName varchar(80) default null, bandName varchar(80) default null)
-	returns table(id, name varchar(80), aliases varchar, sex char(1), date_of_birth date, 
+	returns table(id int, name varchar(80), aliases varchar, sex char(1), date_of_birth date, 
 		place_of_birth varchar, date_of_death date, place_of_death varchar)
 	language SQL
 	stable
@@ -161,6 +162,7 @@ create or replace function addCompositionsToAlbum (bandName varchar, albumName v
 as $$
 declare
 	a_id int;
+	c_id int;
 	com varchar;
 begin
 	if compositions is null or albumName is null then
@@ -173,10 +175,36 @@ begin
 			where Band.name=bandName and Album.name=albumName order by band_id desc, album_id desc limit 1);
 	end if;
 	foreach com in array compositions loop
-		insert into Composition_Album (composition_id, album_id) values
-			((select composition_id from Composition
-			where name=com order by composition_id desc limit 1), a_id);
+		c_id := (select composition_id from Composition where name=com order by composition_id desc limit 1);
+		if c_id is null then
+			insert into Composition (name) values (com) returning composition_id into c_id;
+		end if;
+		insert into Composition_Album (composition_id, album_id) values (c_id, a_id);
 	end loop;
 			
+end
+$$;
+
+create or replace function addPeopleToBand (bandName varchar, variadic people varchar[])
+	returns void
+	language plpgsql
+	volatile
+as $$
+declare
+	b_id int;
+	p_id int;
+	p varchar;
+begin
+	if bandName is null or people is null then
+		return;
+	end if;
+	b_id := (select band_id from Band where Band.name=bandName order by band_id desc limit 1);
+	foreach p in array people loop
+		p_id := (select person_id from Person where name=p order by person_id desc limit 1);
+		if p_id is null then
+			insert into Person (name) values (p) returning person_id into p_id;
+		end if;
+		insert into Member (person_id, band_id) values (p_id, b_id);
+	end loop;
 end
 $$;

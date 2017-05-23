@@ -27,7 +27,7 @@ Begin
 	birth := (select Person.birth_date from Person where Person.person_id = new.person_id);
 	death := (select Person.death_date from Person where Person.person_id = new.person_id);
 	formation := (select formation_date from Band where Band.band_id = new.band_id);
-	disbandment := (select disbandment_date from Band where Band.band_id = new.band_id);
+	disbandment := (select disband_date from Band where Band.band_id = new.band_id);
   	if birth>=disbandment or death<formation then
   		return null;
   	end if;
