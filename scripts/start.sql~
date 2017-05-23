@@ -1,0 +1,5 @@
+\ir createtables.sql
+\ir funtions.sql
+\ir triggers.sql
+\ir indexes.sql
+\ir insertdata.sql
