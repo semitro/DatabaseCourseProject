@@ -112,7 +112,7 @@ as $$
 $$;
 
 --Функция для создания группы по именам людей
-create or replace function createBandFromPeople(band_name varchar(80),formed date,disbanded date,variadic names varchar(80)[]) 
+create or replace function createBandFromPeople(band_name varchar(80),formed date,disbanded date,variadic names[] varchar(80)) 
 	returns varchar(10)
 	language plpgsql
 as $$
