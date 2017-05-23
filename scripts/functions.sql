@@ -55,8 +55,8 @@ as $$
 	 and (Album.release_date is null or until is null or Album.release_date<until);
 $$;
 
--- Имя можно не указывать, чтобы получить по всем
--- Дополнительно можно указать группу, если есть тёзки, чтобы сузить поиск
+-- Отбор можно производить по имени человека, по имени группы или по тому и другому сразу,
+-- или же можно вывести информацию по всем
 create or replace function getPersonalInfo (personName varchar(80) default null, bandName varchar(80) default null)
 	returns table(name varchar(80), aliases varchar, sex char(1), date_of_birth date, 
 		place_of_birth varchar, date_of_death date, place_of_death varchar)
@@ -69,4 +69,83 @@ as $$
 		left join Place as P2 on death_place=P2.place_id left join Aliases using(person_id)
 	where (personName is null or Person.name=personName) and (bandName is null or person_id in
 		(select person_id from Member join Band using(band_id) where Band.name=bandName));
+$$;
+
+-- Отбор можно производить по имени человека, по имени группы или по тому и другому сразу,
+-- или же можно вывести информацию по всем
+create or replace function getPersonalHistory (personName varchar(80) default null, bandName varchar(80) default null)
+	returns table (name varchar(80), band varchar(80), member_from date, member_until date, role varchar(80),
+		role_from date, role_until date)
+	language SQL
+	STABLE
+as $$
+	select Person.name, Band.name, Member.join_date, Member.leave_date, Role.name, Member_Role.start_date, Member_Role.end_date
+	from Person left join Member using(person_id) join Band using(band_id)
+		left join Member_Role using(member_id) join Role using(role_id)
+	where (personName is null or Person.name = personName) and (bandName is null or person_id in
+		(select person_id from Member join Band using(band_id) where Band.name = bandName));
+$$;
+
+create or replace function getBandLabels(bandName varchar(80), since date default null, until date default null)
+	returns table (label varchar(80))
+	language SQL
+	STABLE
+as $$
+	select distinct(Label.name)
+	from Band join Album_Band using(band_id) join Album using(album_id) join Label using(label_id)
+	where Band.name=bandName;
+$$;
+
+create or replace function getLabelAncestors (labelName varchar(80))
+	returns table (label varchar(80))
+	language SQL
+	STABLE
+as $$
+	with recursive label_h(id,p) as (select label_id,parent from Label where name = labelName
+		UNION select label_id,parent from Label,label_h where label_id=p)
+	select name
+	from Label join label_h on id=label_id;
+$$;
+
+create or replace function getCompositionsOnAlbum (bandName varchar, albumName varchar default null)
+	returns table (album varchar, composition varchar, created date, length smallint, style varchar)
+	language SQL
+	stable
+as $$
+	select Album.name, Composition.name, Composition.creation_date, Composition.length, Style.name
+		from Composition left join Style using(style_id) join Composition_Album using(composition_id)
+			join Album using(album_id) join Album_Band using(album_id) join Band using(band_id)
+		where Band.name=bandName and (albumName is null or Album.name=albumName);
+$$;
+
+create or replace function addSingle (compName varchar, released date, rec_from date, rec_to date,
+	labelName varchar, studio varchar, length int, styleName varchar, copies int, variadic bands varchar[])
+	returns void language plpgsql volatile
+as $$
+declare
+	s_id int;
+	l_id int;
+	a_id integer;
+	c_id integer;
+	b varchar;
+begin
+	s_id := (select style_id from Style where name=styleName);
+	if s_id is null then
+		insert into Style values (default, styleName) returning style_id into s_id;
+	end if;
+	l_id := (select label_id from Label where name=labelName);
+	if l_id is null then
+		insert into Label values (default, labelName, null) returning label_id into s_id;
+	end if;
+	insert into Album (name, is_single, release_date, record_start_date, record_end_date,
+		studio1, copies_num, label_id) values
+		(compName, true, released, rec_from, rec_to, studio, copies, l_id) returning album_id into a_id;
+	insert into Composition (name, creation_date, length, style_id) values
+		(compName, rec_from, addSingle.length, s_id) returning composition_id into c_id;
+	insert into Composition_Album (composition_id, album_id) values (c_id, a_id);
+	foreach b in array bands loop
+		insert into Album_Band (album_id, band_id) values
+			(a_id, (select band_id from Band where name=b));
+	end loop;
+end
 $$;
