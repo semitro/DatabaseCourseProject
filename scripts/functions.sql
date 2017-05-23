@@ -88,4 +88,14 @@ as $$
 		left join Member_Role using(member_id) join Role using(role_id)
 	where (personName is null or Person.name=personName) and (bandName is null or person_id in
 		(select person_id from Member join Band using(band_id) where Band.name=bandName));
-$$
+$$;
+
+create or replace function getBandLabels(bandName varchar(80), since date default null, until date default null)
+	returns table (label varchar(80))
+	language SQL
+	STABLE
+as $$
+	select distinct(Label.name)
+	from Band join Album_Band using(band_id) join Album using(album_id) join Label using(label_id)
+	where Band.name=bandName;
+$$;
