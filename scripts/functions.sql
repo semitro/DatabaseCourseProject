@@ -71,8 +71,8 @@ as $$
 		Person.death_date, concat_ws(', ',P2.name,P2.addr,P2.country)
 	from Person left join Place as P1 on birth_place=P1.place_id
 		left join Place as P2 on death_place=P2.place_id left join Aliases using(person_id)
-	where (personName is null or Person.name=personName) and (bandName is null or person_id in
-		(select person_id from Member join Band using(band_id) where Band.name=bandName));
+	where (personName is null or Person.name ilike personName) and (bandName is null or person_id in
+		(select person_id from Member join Band using(band_id) where Band.name ilike bandName));
 $$;
 
 -- Отбор можно производить по имени человека, по имени группы или по тому и другому сразу,
@@ -86,8 +86,8 @@ as $$
 	select Person.name, Band.name, Member.join_date, Member.leave_date, Role.name, Member_Role.start_date, Member_Role.end_date
 	from Person left join Member using(person_id) join Band using(band_id)
 		left join Member_Role using(member_id) join Role using(role_id)
-	where (personName is null or Person.name=personName) and (bandName is null or person_id in
-		(select person_id from Member join Band using(band_id) where Band.name=bandName));
+	where (personName is null or Person.name ilike personName) and (bandName is null or person_id in
+		(select person_id from Member join Band using(band_id) where Band.name ilike bandName));
 $$;
 
 create or replace function getBandLabels(bandName varchar(80), since date default null, until date default null)
@@ -99,3 +99,14 @@ as $$
 	from Band join Album_Band using(band_id) join Album using(album_id) join Label using(label_id)
 	where Band.name=bandName;
 $$;
+
+create or replace function getLabelAncestors(labelName varchar(80))
+	returns table (label varchar(80))
+	language SQL
+	STABLE
+as $$
+	with recursive label_h(id,p) as (select label_id,parent from Label where name ilike labelName
+		UNION select label_id,parent from Label,label_h where label_id=p)
+	select name
+	from Label join label_h on id=label_id;
+$$
