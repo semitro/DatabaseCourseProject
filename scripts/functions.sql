@@ -154,7 +154,7 @@ begin
 end
 $$;
 
--- Добавляет последние композиции
+-- Добавляет последние композиции, создаёт если не находит
 create or replace function addCompositionsToAlbum (bandName varchar, albumName varchar, variadic compositions varchar[])
 	returns void
 	language plpgsql
@@ -185,6 +185,7 @@ begin
 end
 $$;
 
+-- Создаёт людей, если не находит
 create or replace function addPeopleToBand (bandName varchar, variadic people varchar[])
 	returns void
 	language plpgsql
