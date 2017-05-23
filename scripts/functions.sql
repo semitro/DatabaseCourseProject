@@ -107,6 +107,17 @@ as $$
 	from Label join label_h on id=label_id;
 $$;
 
+create or replace function getCompositionsOnAlbum (bandName varchar, albumName varchar default null)
+	returns table (album varchar, composition varchar, created date, length smallint, style varchar)
+	language SQL
+	stable
+as $$
+	select Album.name, Composition.name, Composition.creation_date, Composition.length, Style.name
+		from Composition left join Style using(style_id) join Composition_Album using(composition_id)
+			join Album using(album_id) join Album_Band using(album_id) join Band using(band_id)
+		where Band.name=bandName and (albumName is null or Album.name=albumName);
+$$;
+
 create or replace function addSingle (compName varchar, released date, rec_from date, rec_to date,
 	labelName varchar, studio varchar, length int, styleName varchar, copies int, variadic bands varchar[])
 	returns void language plpgsql volatile
