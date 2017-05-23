@@ -1,20 +1,23 @@
 create or replace function TriggerAliasDateCorrect() 
-	returns trigger As $$
+	returns trigger
+	language plpgsql
+as $$
 Begin
- if (new.start_date < (select birth_date from person where new.person_id = Person.person_id ) )
-  then return NULL;
- end if;
-return new;
-End;$$ language plpgsql;
+	if new.start_date < (select birth_date from person where new.person_id = Person.person_id )then
+		return NULL;
+ 	end if;
+	return new;
+End;
+$$;
 
-create trigger TriggerAliasDateCorrect
-	before insert or update on Alias 
-	for each row
-	execute procedure TriggerAliasDateCorrect();
+create trigger TriggerAliasDateCorrect before insert or update on Alias 
+	for each row execute procedure TriggerAliasDateCorrect();
 
 
 create or replace function memberDateCorrect()
-	returns trigger As $$
+	returns trigger
+	language plpgsql
+as $$
 Declare
 	birth date;
 	death date;
@@ -36,13 +39,10 @@ Begin
 	end if;
 	return new;
 End;
-$$
-language plpgsql;
+$$;
 
-create trigger TriggerMemberDatesCorrect
-	before insert or update on Member
-	 for each row
-	execute procedure memberDateCorrect();
+create trigger TriggerMemberDatesCorrect before insert or update on Member
+	for each row execute procedure memberDateCorrect();
 	
 
 
