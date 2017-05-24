@@ -8,7 +8,7 @@ begin
 	select distinct Composition.composition_id, Composition.name, Composition.creation_date, Style.name Style 
 	from Composition left join Style using(style_id) join Composition_Album using(composition_id)
 		join Album using(album_id) join Album_Band using(album_id) join Band using(band_id)
-	where Band.name = bandName order by Composition.creation_date;
+	where Album.is_fake=false and Band.name = bandName order by Composition.creation_date;
 end
 $$;
 
@@ -110,7 +110,7 @@ as $$
 	from Label join label_h on id=label_id;
 $$;
 
-create or replace function getCompositionsOnAlbum (bandName varchar, albumName varchar default null)
+create or replace function getCompositionsInAlbum (bandName varchar, albumName varchar default null)
 	returns table (album varchar, composition varchar, created date, length smallint, style varchar)
 	language SQL
 	stable
@@ -211,7 +211,7 @@ end
 $$;
 
 create or replace function addPerformance (album varchar, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
-	returns void
+	returns int
 	language plpgsql
 	volatile
 as $$
@@ -243,11 +243,12 @@ begin
 		end if;
 		insert into Performance_Band (performance_id, band_id) values (p_id, b_id);
 	end loop;
+	return p_id;
 end
 $$;
 
 create or replace function addPerformance (album_id int, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
-	returns void
+	returns int
 	language plpgsql
 	volatile
 as $$
@@ -277,5 +278,28 @@ begin
 		end if;
 		insert into Performance_Band (performance_id, band_id) values (p_id, b_id);
 	end loop;
+	return p_id;
+end
+$$;
+
+create or replace function addFakeAlbum (variadic compositions varchar[])
+	returns int
+	language plpgsql
+	volatile
+as $$
+declare
+	a_id int;
+	c varchar;
+	c_id int;
+begin
+	insert into Album (album_id) values (default) returning album_id into a_id;
+	foreach c in array compositions loop
+		c_id := (select composition_id from Composition where name=c);
+		if c_id is null then
+			insert into Composition (name) values (c) returning composition_id into c_id;
+		end if;
+		insert into Composition_Album (composition_id, album_id) values (c_id, a_id);
+	end loop;
+	return a_id;
 end
 $$;
