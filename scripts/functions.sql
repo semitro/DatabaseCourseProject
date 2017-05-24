@@ -119,8 +119,8 @@ declare
 	i integer;
 	bandID integer;
 Begin
-	bandId := insert into Band(band_name,formation_date,disband_date) values 
-				  (band_name,formed,disbanded) returning band_id;
+	insert into Band(band_name,formation_date,disband_date) values 
+				  (band_name,formed,disbanded) returning band_id into bandID;
 
 	while(i < array_length(names)) do
 	begin
