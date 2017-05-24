@@ -209,3 +209,73 @@ begin
 	end loop;
 end
 $$;
+
+create or replace function addPerformance (album varchar, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
+	returns void
+	language plpgsql
+	volatile
+as $$
+declare
+	b varchar;
+	con_id int;
+	pl_id int;
+	p_id int;
+	a_id int;
+	b_id int;
+begin
+	a_id := (select album_id from Album where name=addPerformance.album);
+	if a_id is null then
+		raise 'Album % doesn''t exist', album using hint='Add album before adding performance';
+	end if;
+	pl_id := (select place_id from Place where place.country=addPerformance.country and addr=address order by place_id desc limit 1);
+	if pl_id is null then
+		insert into Place (country,addr) values (addPerformance.country, address)
+			returning place_id into pl_id;
+	end if;
+	insert into Concert (place_id, start_date, end_date, attendants_num) values
+		(pl_id, day, day, attendants) returning concert_id into con_id;
+	insert into Performance (concert_id, album_id, length) values (con_id, a_id, addPerformance.length)
+		returning performance_id into p_id;
+	foreach b in array bands loop
+		b_id := (select band_id from Band where name=b);
+		if b_id is null then
+			continue;
+		end if;
+		insert into Performance_Band (performance_id, band_id) values (p_id, b_id);
+	end loop;
+end
+$$;
+
+create or replace function addPerformance (album_id int, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
+	returns void
+	language plpgsql
+	volatile
+as $$
+declare
+	b varchar;
+	con_id int;
+	pl_id int;
+	p_id int;
+	b_id int;
+begin
+	if album_id is null then
+		raise 'album_id must not be null';
+	end if;
+	pl_id := (select place_id from Place where place.country=addPerformance.country and addr=address order by place_id desc limit 1);
+	if pl_id is null then
+		insert into Place (country,addr) values (addPerformance.country, address)
+			returning place_id into pl_id;
+	end if;
+	insert into Concert (place_id, start_date, end_date, attendants_num) values
+		(pl_id, day, day, attendants) returning concert_id into con_id;
+	insert into Performance (concert_id, album_id, length) values (con_id, album_id, addPerformance.length)
+		returning performance_id into p_id;
+	foreach b in array bands loop
+		b_id := (select band_id from Band where name=b);
+		if b_id is null then
+			continue;
+		end if;
+		insert into Performance_Band (performance_id, band_id) values (p_id, b_id);
+	end loop;
+end
+$$;
