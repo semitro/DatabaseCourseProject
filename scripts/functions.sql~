@@ -12,10 +12,27 @@ begin
 end
 $$;
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+create or replace function getAllCompositionsWrittenBy (person_name varchar(80))
+<<<<<<< HEAD
+	returns table(id integer, name varchar(80),creation_date Date, Style navarchar(80), of_what varchar(80))
+	language plpgsql
+	STABLE
+=======
+	returns table(id integer, name varchar(80),creation_date Date, Style varchar(80), of_what varchar(80))
+>>>>>>> a6c02e15e23f1d59539910603b4f1e8591fc62fe
+=======
+>>>>>>> funky
 create or replace function getCompositionsAuthoredByPerson (person_name varchar(80))
 	returns table(id integer, name varchar(80),creation_date date, style varchar(80), of_what varchar(80))
 	language plpgsql
 	stable
+<<<<<<< HEAD
+=======
+>>>>>>> 3c71ce50deb96b4f480a76df46653e08eb2d384d
+>>>>>>> funky
 as $$
 Begin
 	return Query	
@@ -103,13 +120,55 @@ create or replace function getLabelAncestors (labelName varchar(80))
 	returns table (id int, label varchar(80))
 	language SQL
 	STABLE
+<<<<<<< HEAD
 as $$
 	with recursive label_h(id,p) as (select label_id,parent from Label where name = labelName
+=======
+<<<<<<< HEAD
+as $$ 
+	with recursive label_h(id,p) as (select label_id,parent from Label where name ilike labelName
+=======
+as $$
+	with recursive label_h(id,p) as (select label_id,parent from Label where name = labelName
+>>>>>>> a6c02e15e23f1d59539910603b4f1e8591fc62fe
+>>>>>>> funky
 		UNION select label_id,parent from Label,label_h where label_id=p)
 	select label_id, name
 	from Label join label_h on id=label_id;
 $$;
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+--Функция для создания группы по именам людей
+create or replace function createBandFromPeople(band_name varchar(80),formed date,disbanded date,variadic names varchar(80)[]) 
+	returns varchar(10)
+	language plpgsql
+as $$
+declare 
+	i integer;
+	bandID integer;
+Begin
+	bandId := insert into Band(band_name,formation_date,disband_date) values 
+				  (band_name,formed,disbanded) returning band_id;
+
+	while(i < array_length(names)) do
+	begin
+		insert into Member(person_id,band_id) values
+		( select(Person_id from Person where name ilike names(i)),bandId);
+		i := i + 1;
+	end
+End	
+$$
+
+
+=======
+create or replace function addSingle (compName varchar, released date, rec_from date, rec_to date,
+	labelName varchar, studio varchar, length int, styleName varchar, copies int, variadic bands varchar[])
+	returns void language plpgsql volatile
+=======
+>>>>>>> funky
 create or replace function getCompositionsOnAlbum (bandName varchar, albumName varchar default null)
 	returns table (album varchar, composition varchar, created date, length smallint, style varchar)
 	language SQL
@@ -125,6 +184,10 @@ create or replace function addSingle (compName varchar, released date, rec_from 
 	returns void
 	language plpgsql
 	volatile
+<<<<<<< HEAD
+=======
+>>>>>>> 3c71ce50deb96b4f480a76df46653e08eb2d384d
+>>>>>>> funky
 as $$
 declare
 	s_id int;
@@ -153,8 +216,16 @@ begin
 	end loop;
 end
 $$;
+<<<<<<< HEAD
 
 -- Добавляет последние композиции
+=======
+<<<<<<< HEAD
+>>>>>>> a6c02e15e23f1d59539910603b4f1e8591fc62fe
+=======
+
+-- Добавляет последние композиции, создаёт если не находит
+>>>>>>> funky
 create or replace function addCompositionsToAlbum (bandName varchar, albumName varchar, variadic compositions varchar[])
 	returns void
 	language plpgsql
@@ -185,6 +256,7 @@ begin
 end
 $$;
 
+<<<<<<< HEAD
 -- Создание альбома, удобно для совместных
 create or replace function createAlbum(albumName varchar, variadic bandName varchar[])
 	returns void
@@ -209,6 +281,9 @@ End
 $$;
 
 
+=======
+-- Создаёт людей, если не находит
+>>>>>>> funky
 create or replace function addPeopleToBand (bandName varchar, variadic people varchar[])
 	returns void
 	language plpgsql
@@ -232,3 +307,7 @@ begin
 	end loop;
 end
 $$;
+<<<<<<< HEAD
+=======
+>>>>>>> 3c71ce50deb96b4f480a76df46653e08eb2d384d
+>>>>>>> funky

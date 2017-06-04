@@ -8,7 +8,7 @@ begin
 	select distinct Composition.composition_id, Composition.name, Composition.creation_date, Style.name Style 
 	from Composition left join Style using(style_id) join Composition_Album using(composition_id)
 		join Album using(album_id) join Album_Band using(album_id) join Band using(band_id)
-	where Band.name = bandName order by Composition.creation_date;
+	where Album.is_fake=false and Band.name = bandName order by Composition.creation_date;
 end
 $$;
 
@@ -110,7 +110,28 @@ as $$
 	from Label join label_h on id=label_id;
 $$;
 
-create or replace function getCompositionsOnAlbum (bandName varchar, albumName varchar default null)
+--Функция для создания группы по именам людей
+create or replace function createBandFromPeople(band_name varchar(80),formed date,disbanded date,variadic names varchar(80)[]) 
+	returns varchar(10)
+	language plpgsql
+as $$
+declare 
+	i integer;
+	bandID integer;
+Begin
+	insert into Band(band_name,formation_date,disband_date) values 
+				  (band_name,formed,disbanded) returning band_id into bandID;
+
+	while(i < array_length(names)) do
+	begin
+		insert into Member(person_id,band_id) values
+		( select(Person_id from Person where name ilike names(i)),bandId);
+		i := i + 1;
+	end
+End	
+$$;
+
+create or replace function getCompositionsInAlbum (bandName varchar, albumName varchar default null)
 	returns table (album varchar, composition varchar, created date, length smallint, style varchar)
 	language SQL
 	stable
@@ -154,7 +175,7 @@ begin
 end
 $$;
 
--- Добавляет последние композиции
+-- Добавляет последние композиции, создаёт если не находит
 create or replace function addCompositionsToAlbum (bandName varchar, albumName varchar, variadic compositions varchar[])
 	returns void
 	language plpgsql
@@ -208,7 +229,7 @@ Begin
 End
 $$;
 
-
+-- Создаёт людей, если не находит
 create or replace function addPeopleToBand (bandName varchar, variadic people varchar[])
 	returns void
 	language plpgsql
@@ -231,4 +252,121 @@ begin
 		insert into Member (person_id, band_id) values (p_id, b_id);
 	end loop;
 end
+$$;
+
+create or replace function addPerformance (album varchar, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
+	returns int
+	language plpgsql
+	volatile
+as $$
+declare
+	b varchar;
+	con_id int;
+	pl_id int;
+	p_id int;
+	a_id int;
+	b_id int;
+begin
+	a_id := (select album_id from Album where name=addPerformance.album);
+	if a_id is null then
+		raise 'Album % doesn''t exist', album using hint='Add album before adding performance';
+	end if;
+	pl_id := (select place_id from Place where place.country=addPerformance.country and addr=address order by place_id desc limit 1);
+	if pl_id is null then
+		insert into Place (country,addr) values (addPerformance.country, address)
+			returning place_id into pl_id;
+	end if;
+	insert into Concert (place_id, start_date, end_date, attendants_num) values
+		(pl_id, day, day, attendants) returning concert_id into con_id;
+	insert into Performance (concert_id, album_id, length) values (con_id, a_id, addPerformance.length)
+		returning performance_id into p_id;
+	foreach b in array bands loop
+		b_id := (select band_id from Band where name=b);
+		if b_id is null then
+			continue;
+		end if;
+		insert into Performance_Band (performance_id, band_id) values (p_id, b_id);
+	end loop;
+	return p_id;
+end
+$$;
+
+create or replace function addPerformance (album_id int, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
+	returns int
+	language plpgsql
+	volatile
+as $$
+declare
+	b varchar;
+	con_id int;
+	pl_id int;
+	p_id int;
+	b_id int;
+begin
+	if album_id is null then
+		raise 'album_id must not be null';
+	end if;
+	pl_id := (select place_id from Place where place.country=addPerformance.country and addr=address order by place_id desc limit 1);
+	if pl_id is null then
+		insert into Place (country,addr) values (addPerformance.country, address)
+			returning place_id into pl_id;
+	end if;
+	insert into Concert (place_id, start_date, end_date, attendants_num) values
+		(pl_id, day, day, attendants) returning concert_id into con_id;
+	insert into Performance (concert_id, album_id, length) values (con_id, album_id, addPerformance.length)
+		returning performance_id into p_id;
+	foreach b in array bands loop
+		b_id := (select band_id from Band where name=b);
+		if b_id is null then
+			continue;
+		end if;
+		insert into Performance_Band (performance_id, band_id) values (p_id, b_id);
+	end loop;
+	return p_id;
+end
+$$;
+
+create or replace function addFakeAlbum (variadic compositions varchar[])
+	returns int
+	language plpgsql
+	volatile
+as $$
+declare
+	a_id int;
+	c varchar;
+	c_id int;
+begin
+	insert into Album (album_id) values (default) returning album_id into a_id;
+	foreach c in array compositions loop
+		c_id := (select composition_id from Composition where name=c);
+		if c_id is null then
+			insert into Composition (name) values (c) returning composition_id into c_id;
+		end if;
+		insert into Composition_Album (composition_id, album_id) values (c_id, a_id);
+	end loop;
+	return a_id;
+end
+$$;
+
+-- Создание альбома, удобно для совместных
+create or replace function createAlbum(albumName varchar, variadic bandName varchar[])
+	returns void
+	language plpgsql
+as $$
+declare
+	b varchar;
+	b_id integer;
+	alb_id integer;
+Begin
+	if bandName is null or albumName is null then 
+		return;
+	end if;
+	insert into Album(name,is_fake,is_single) values (albumName,'false','false') returning Album_id into alb_id;
+	foreach b in array bandName loop
+		b_id := (select band_id from Band where name = b order by band_id desc limit 1);
+		if(b_id is not null) then
+			insert into album_band(album_id,band_id) values(alb_id,b_id);
+		end if;
+	end loop;
+End
 $$;

@@ -1,0 +1,2 @@
+drop trigger TriggerMemberDatesCorrect;
+drop trigger TriggerAliasDateCorrect on Alias;

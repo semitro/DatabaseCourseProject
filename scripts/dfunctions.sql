@@ -9,3 +9,7 @@ drop function getLabelAncestors  (labelName varchar(80));
 drop function getCompositionsOnAlbum  (bandName varchar, albumName varchar);
 drop function addSingle  (compName varchar, released date, rec_from date, rec_to date, labelName varchar, studio varchar, length int, styleName varchar, copies int, variadic bands varchar[]);
 drop function addCompositionsToAlbum  (bandName varchar, albumName varchar, variadic compositions varchar[]);
+drop function addPeopleToBand  (bandName varchar, variadic people varchar[]);
+drop function addPerformance  (album varchar, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[]);
+drop function addPerformance  (album_id int, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[]);
+drop function addFakeAlbum  (variadic compositions varchar[]);
