@@ -208,7 +208,7 @@ $$;
 
 -- Создание альбома, удобно для совместных
 create or replace function createAlbum(albumName varchar, variadic bandName varchar[])
-	returns void
+	returns int
 	language plpgsql
 as $$
 declare
@@ -226,6 +226,7 @@ Begin
 			insert into album_band(album_id,band_id) values(alb_id,b_id);
 		end if;
 	end loop;
+	return alb_id;
 End
 $$;
 
@@ -348,25 +349,3 @@ begin
 end
 $$;
 
--- Создание альбома, удобно для совместных
-create or replace function createAlbum(albumName varchar, variadic bandName varchar[])
-	returns void
-	language plpgsql
-as $$
-declare
-	b varchar;
-	b_id integer;
-	alb_id integer;
-Begin
-	if bandName is null or albumName is null then 
-		return;
-	end if;
-	insert into Album(name,is_fake,is_single) values (albumName,'false','false') returning Album_id into alb_id;
-	foreach b in array bandName loop
-		b_id := (select band_id from Band where name = b order by band_id desc limit 1);
-		if(b_id is not null) then
-			insert into album_band(album_id,band_id) values(alb_id,b_id);
-		end if;
-	end loop;
-End
-$$;
