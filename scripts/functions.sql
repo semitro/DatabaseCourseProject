@@ -112,7 +112,7 @@ $$;
 
 --Функция для создания группы по именам людей
 create or replace function createBandFromPeople(band_name varchar(80),formed date,disbanded date,variadic names varchar(80)[]) 
-	returns varchar(10)
+	returns int
 	language plpgsql
 as $$
 declare 
@@ -128,6 +128,7 @@ Begin
 		( select(Person_id from Person where name ilike names(i)),bandId);
 		i := i + 1;
 	end
+	return bandID;
 End	
 $$;
 
