@@ -96,7 +96,7 @@ create or replace function getBandLabels(bandName varchar(80), since date defaul
 as $$
 	select distinct(Label.name)
 	from Band join Album_Band using(band_id) join Album using(album_id) join Label using(label_id)
-	where Band.name=bandName;
+	where Band.name=bandName and (since is null or release_date>=since) and (until is null or release_date<=until);
 $$;
 
 create or replace function getLabelAncestors (labelName varchar(80))
@@ -118,16 +118,15 @@ as $$
 declare 
 	i integer;
 	bandID integer;
+	n varchar;
 Begin
 	insert into Band(band_name,formation_date,disband_date) values 
 				  (band_name,formed,disbanded) returning band_id into bandID;
 
-	while(i < array_length(names)) do
-	begin
+	foreach n in array names loop
 		insert into Member(person_id,band_id) values
-		( select(Person_id from Person where name ilike names(i)),bandId);
-		i := i + 1;
-	end
+		((select Person_id from Person where Person.name=n),bandId);
+	end loop;
 	return bandID;
 End	
 $$;
@@ -144,7 +143,7 @@ as $$
 $$;
 
 create or replace function addSingle (compName varchar, released date, rec_from date, rec_to date, labelName varchar, studio varchar, length int, styleName varchar, copies int, variadic bands varchar[])
-	returns void
+	returns int
 	language plpgsql
 	volatile
 as $$
@@ -173,6 +172,7 @@ begin
 		insert into Album_Band (album_id, band_id) values
 			(a_id, (select band_id from Band where name=b));
 	end loop;
+	return a_id;
 end
 $$;
 
@@ -218,7 +218,7 @@ declare
 	alb_id integer;
 Begin
 	if bandName is null or albumName is null then 
-		return;
+		return null;
 	end if;
 	insert into Album(name,is_fake,is_single) values (albumName,'false','false') returning Album_id into alb_id;
 	foreach b in array bandName loop
@@ -255,6 +255,7 @@ begin
 	end loop;
 end
 $$;
+
 
 create or replace function addPerformance (album varchar, length int, country varchar, address varchar, day date, attendants int, variadic bands varchar[])
 	returns int
